@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">IIRS Survey App</string>
+
+    <!-- Mapbox Access Token -->
+    <string name="mapbox_access_token">pk.eyJ1IjoiYWJoaXNoZWsta2F0aGF5YXQiLCJhIjoiY2p3aXgzd24yMmttZDQ4bXE1bnFnODhlbiJ9.-WothtgOv3usLd4JI_H9bw</string>
+
+    <!-- Permission Strings -->
+    <string name="user_location_permission_explanation">This app needs location permissions in order to show its functionality.</string>
+    <string name="user_location_permission_not_granted">You didn\'t grant location permissions.</string>
+</resources>
