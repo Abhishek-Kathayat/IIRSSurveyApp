@@ -6,9 +6,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:background="@drawable/bottomsheet_background"
     app:layout_behavior="@string/bottom_sheet_behavior"
     app:behavior_hideable="true"
-    app:behavior_peekHeight="50dp">
+    app:behavior_peekHeight="60dp"
+    android:elevation="20dp">
 
     <RelativeLayout
         android:id="@+id/Relay_bottomsheet_1"
@@ -19,9 +21,11 @@
             android:id="@+id/closeopen_button"
             android:layout_width="wrap_content"
             android:layout_height="15dp"
+            android:layout_marginTop="5dp"
             android:src="@drawable/ic_arrow_up"
             android:backgroundTint="@android:color/transparent"
-            android:layout_centerHorizontal="true"/>
+            android:layout_centerHorizontal="true"
+            android:tint="@color/defaulttabtextcolor"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -55,7 +59,7 @@
                 app:tabMode="scrollable"
                 app:tabTextAppearance="@style/TabTextStyle"
                 app:tabTextColor="@color/defaulttabtextcolor"
-                app:tabSelectedTextColor="@color/activetabtextcolor"/>
+                app:tabSelectedTextColor="@color/colorPrimary_1"/>
 
         </android.support.v4.view.ViewPager>
 

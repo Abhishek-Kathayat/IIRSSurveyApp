@@ -4,16 +4,20 @@ import android.annotation.SuppressLint;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.iirs.iirssurveyapp.Adapters.LayersPagerAdapter;
+import com.iirs.iirssurveyapp.Models.LayersModel;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineCallback;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -35,16 +39,18 @@ import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.maps.SupportMapFragment;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements PermissionsListener {
 
     private MapboxMap mapboxMap;
-    private BottomSheetBehavior bottomSheetBehavior;
     private PermissionsManager permissionsManager;
     private long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
+    private List<LayersModel> layerslist = new ArrayList<>();
     private long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
+
 
     private MainActivityLocationCallback callback = new MainActivityLocationCallback(this);
 
@@ -57,16 +63,15 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         setContentView(R.layout.activity_main);
 
         RelativeLayout relativeLayout = findViewById(R.id.main_bottom_sheet);
-        bottomSheetBehavior = BottomSheetBehavior.from(relativeLayout);
+        final BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(relativeLayout);
         bottomSheetBehavior.setFitToContents(false);
         final ImageButton closeopenbutton = findViewById(R.id.closeopen_button);
+        bottomSheetBehavior.setHideable(false);
 
         bottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 switch(newState) {
-                    case BottomSheetBehavior.STATE_HIDDEN:
-                        break;
                     case BottomSheetBehavior.STATE_EXPANDED: {
                         closeopenbutton.setImageResource(R.drawable.ic_arrow_down);
                     }
@@ -90,6 +95,31 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
 
             }
         });
+
+        closeopenbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
+                    closeopenbutton.setImageResource(R.drawable.ic_dash);
+                }
+                else if(bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_HALF_EXPANDED) {
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                    closeopenbutton.setImageResource(R.drawable.ic_arrow_up);
+                }
+                else if(bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
+                    closeopenbutton.setImageResource(R.drawable.ic_dash);
+                }
+            }
+        });
+
+        ViewPager viewPager = findViewById(R.id.layers_pager);
+        TabLayout tabLayout = findViewById(R.id.layers_tab);
+        tabLayout.setupWithViewPager(viewPager);
+        getLayers();
+        PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist);
+        viewPager.setAdapter(pagerAdapter);
 
         SupportMapFragment mapFragment;
         if(savedInstanceState == null) {
@@ -179,6 +209,21 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
             Toast.makeText(this, R.string.user_location_permission_not_granted, Toast.LENGTH_LONG).show();
             finish();
         }
+    }
+
+    private void getLayers() {
+        LayersModel layersModel = new LayersModel("Soil");
+        layerslist.add(layersModel);
+        layersModel = new LayersModel("Geomorphology");
+        layerslist.add(layersModel);
+        layersModel = new LayersModel("Lithology");
+        layerslist.add(layersModel);
+        layersModel = new LayersModel("Slope");
+        layerslist.add(layersModel);
+        layersModel = new LayersModel("Aspect");
+        layerslist.add(layersModel);
+        layersModel = new LayersModel("Population");
+        layerslist.add(layersModel);
     }
 
     private static class MainActivityLocationCallback

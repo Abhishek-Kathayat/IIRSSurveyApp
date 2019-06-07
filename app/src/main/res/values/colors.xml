@@ -6,4 +6,8 @@
 
     <color name="defaulttabtextcolor">#7A7A7A</color>
     <color name="activetabtextcolor">#3185C7</color>
+
+    <!-- App Colors -->
+    <color name="colorPrimary_1">#008cdb</color>
+    <color name="colorPrimary_2">#ff8d2c</color>
 </resources>
