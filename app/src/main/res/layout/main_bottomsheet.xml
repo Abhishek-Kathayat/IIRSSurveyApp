@@ -25,7 +25,7 @@
             android:src="@drawable/ic_arrow_up"
             android:backgroundTint="@android:color/transparent"
             android:layout_centerHorizontal="true"
-            android:tint="@color/defaulttabtextcolor"/>
+            android:tint="@color/colorPrimary_1"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -36,13 +36,15 @@
             android:textAllCaps="false"
             android:textAlignment="center"
             android:layout_below="@id/closeopen_button"
-            android:layout_centerHorizontal="true"/>
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/colorPrimary_1"/>
 
     </RelativeLayout>
 
     <RelativeLayout
         android:id="@+id/Relay_bottomsheet_2"
         android:layout_below="@id/Relay_bottomsheet_1"
+        android:layout_marginTop="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -59,7 +61,7 @@
                 app:tabMode="scrollable"
                 app:tabTextAppearance="@style/TabTextStyle"
                 app:tabTextColor="@color/defaulttabtextcolor"
-                app:tabSelectedTextColor="@color/colorPrimary_1"/>
+                app:tabSelectedTextColor="@color/colorPrimary_2"/>
 
         </android.support.v4.view.ViewPager>
 
