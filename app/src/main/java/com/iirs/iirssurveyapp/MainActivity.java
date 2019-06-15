@@ -224,6 +224,8 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         layerslist.add(layersModel);
         layersModel = new LayersModel("Population");
         layerslist.add(layersModel);
+        layersModel = new LayersModel("Drainage");
+        layerslist.add(layersModel);
     }
 
     private static class MainActivityLocationCallback

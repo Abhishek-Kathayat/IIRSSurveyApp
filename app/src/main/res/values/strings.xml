@@ -6,9 +6,10 @@
     <string name="mapbox_access_token">pk.eyJ1IjoiYWJoaXNoZWsta2F0aGF5YXQiLCJhIjoiY2p3aXgzd24yMmttZDQ4bXE1bnFnODhlbiJ9.-WothtgOv3usLd4JI_H9bw</string>
 
     <!-- Permission Strings -->
-    <string name="user_location_permission_explanation">This app needs location permissions in order to show its functionality.</string>
-    <string name="user_location_permission_not_granted">You didn\'t grant location permissions.</string>
+    <string name="user_location_permission_explanation">Location Permission is required for the proper fuctioning of the app.</string>
+    <string name="user_location_permission_not_granted">Location Permission has not been granted.</string>
 
+    <!-- Other Strings -->
     <string name="layersdetails">Layers Detail</string>
 
 </resources>
