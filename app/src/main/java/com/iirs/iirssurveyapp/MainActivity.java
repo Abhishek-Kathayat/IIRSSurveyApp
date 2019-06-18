@@ -18,6 +18,9 @@ import android.widget.Toast;
 
 import com.iirs.iirssurveyapp.Adapters.LayersPagerAdapter;
 import com.iirs.iirssurveyapp.Models.LayersModel;
+import com.iirs.iirssurveyapp.Models.PopulationModel;
+import com.iirs.iirssurveyapp.Rest.ApiClient;
+import com.iirs.iirssurveyapp.Rest.ApiInterface;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineCallback;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -43,8 +46,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class MainActivity extends AppCompatActivity implements PermissionsListener {
 
+    public TabLayout tabLayout;
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
     private long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
@@ -115,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         });
 
         ViewPager viewPager = findViewById(R.id.layers_pager);
-        TabLayout tabLayout = findViewById(R.id.layers_tab);
+        tabLayout = findViewById(R.id.layers_tab);
         tabLayout.setupWithViewPager(viewPager);
         getLayers();
         PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist);
@@ -231,6 +239,9 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
     private static class MainActivityLocationCallback
             implements LocationEngineCallback<LocationEngineResult> {
 
+        private int layernumber = 0;
+        private double latitude = 0.0;
+        private double longitude = 0.0;
         private final WeakReference<MainActivity> activityWeakReference;
 
         MainActivityLocationCallback(MainActivity activity) {
@@ -240,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
 
         @Override
         public void onSuccess(LocationEngineResult result) {
-            MainActivity activity = activityWeakReference.get();
+            final MainActivity activity = activityWeakReference.get();
 
             if (activity != null) {
                 Location location = result.getLastLocation();
@@ -257,6 +268,40 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
 
                 if (activity.mapboxMap != null && result.getLastLocation() != null) {
                     activity.mapboxMap.getLocationComponent().forceLocationUpdate(result.getLastLocation());
+                    latitude = result.getLastLocation().getLatitude();
+                    longitude = result.getLastLocation().getLongitude();
+                    final ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
+                    activity.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                        @Override
+                        public void onTabSelected(TabLayout.Tab tab) {
+                            layernumber = tab.getPosition();
+                            Call<PopulationModel> call = apiInterface.getLocationDetails(Objects.requireNonNull(Objects.requireNonNull(activity.tabLayout.getTabAt(layernumber)).getText()).toString(), (float)latitude, (float)longitude);
+                            call.enqueue(new Callback<PopulationModel>() {
+                                @Override
+                                public void onResponse(@NonNull Call<PopulationModel> call, @NonNull Response<PopulationModel> response) {
+                                    if(response.body() != null) {
+                                        Toast.makeText(activity, response.body().getAreatype(), Toast.LENGTH_SHORT).show();
+                                    }
+                                    else {
+                                        Toast.makeText(activity, "The Response body is empty", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(@NonNull Call<PopulationModel> call, Throwable t) {
+                                    Toast.makeText(activity, "The Response has failed", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onTabUnselected(TabLayout.Tab tab) {
+                        }
+
+                        @Override
+                        public void onTabReselected(TabLayout.Tab tab) {
+                        }
+                    });
                 }
             }
         }
