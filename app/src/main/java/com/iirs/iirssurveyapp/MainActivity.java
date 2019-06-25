@@ -16,9 +16,11 @@ import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.google.gson.JsonObject;
 import com.iirs.iirssurveyapp.Adapters.LayersPagerAdapter;
+import com.iirs.iirssurveyapp.Fragments.LayersFragment;
 import com.iirs.iirssurveyapp.Models.LayersModel;
-import com.iirs.iirssurveyapp.Models.PopulationModel;
+import com.iirs.iirssurveyapp.Models.DataModel;
 import com.iirs.iirssurveyapp.Rest.ApiClient;
 import com.iirs.iirssurveyapp.Rest.ApiInterface;
 import com.mapbox.android.core.location.LocationEngine;
@@ -43,6 +45,7 @@ import com.mapbox.mapboxsdk.maps.SupportMapFragment;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -52,11 +55,11 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity implements PermissionsListener {
 
+    public ViewPager viewPager;
     public TabLayout tabLayout;
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
     private long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
-    private List<LayersModel> layerslist = new ArrayList<>();
     private long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
 
 
@@ -122,12 +125,12 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
             }
         });
 
-        ViewPager viewPager = findViewById(R.id.layers_pager);
+        viewPager = findViewById(R.id.layers_pager);
         tabLayout = findViewById(R.id.layers_tab);
         tabLayout.setupWithViewPager(viewPager);
         getLayers();
-        PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist);
-        viewPager.setAdapter(pagerAdapter);
+        //PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist);
+        //viewPager.setAdapter(pagerAdapter);
 
         SupportMapFragment mapFragment;
         if(savedInstanceState == null) {
@@ -220,26 +223,26 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
     }
 
     private void getLayers() {
-        LayersModel layersModel = new LayersModel("Soil");
-        layerslist.add(layersModel);
-        layersModel = new LayersModel("Geomorphology");
-        layerslist.add(layersModel);
-        layersModel = new LayersModel("Lithology");
-        layerslist.add(layersModel);
-        layersModel = new LayersModel("Slope");
-        layerslist.add(layersModel);
-        layersModel = new LayersModel("Aspect");
-        layerslist.add(layersModel);
-        layersModel = new LayersModel("Population");
-        layerslist.add(layersModel);
-        layersModel = new LayersModel("Drainage");
-        layerslist.add(layersModel);
+        ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
+        Call<List<LayersModel>> call = apiInterface.getLayers();
+        call.enqueue(new Callback<List<LayersModel>>() {
+            @Override
+            public void onResponse(Call<List<LayersModel>> call, Response<List<LayersModel>> response) {
+                List<LayersModel> layerslist = response.body();
+                PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist);
+                viewPager.setAdapter(pagerAdapter);
+            }
+
+            @Override
+            public void onFailure(Call<List<LayersModel>> call, Throwable t) {
+                Log.d("Error", t.getMessage());
+            }
+        });
     }
 
     private static class MainActivityLocationCallback
             implements LocationEngineCallback<LocationEngineResult> {
 
-        private int layernumber = 0;
         private double latitude = 0.0;
         private double longitude = 0.0;
         private final WeakReference<MainActivity> activityWeakReference;
@@ -260,48 +263,106 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                     return;
                 }
 
-                /*
-                Toast.makeText(activity, String.format(activity.getString(R.string.new_location),
-                        String.valueOf(result.getLastLocation().getLatitude()), String.valueOf(result.getLastLocation().getLongitude())),
-                        Toast.LENGTH_SHORT).show();
-                */
-
                 if (activity.mapboxMap != null && result.getLastLocation() != null) {
                     activity.mapboxMap.getLocationComponent().forceLocationUpdate(result.getLastLocation());
-                    latitude = result.getLastLocation().getLatitude();
-                    longitude = result.getLastLocation().getLongitude();
-                    final ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
+                    if(result.getLastLocation().getLatitude() != latitude && result.getLastLocation().getLongitude() != longitude) {
+                        latitude = result.getLastLocation().getLatitude();
+                        longitude = result.getLastLocation().getLongitude();
+
+                    }/*
                     activity.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
                         @Override
                         public void onTabSelected(TabLayout.Tab tab) {
-                            layernumber = tab.getPosition();
-                            Call<PopulationModel> call = apiInterface.getLocationDetails(Objects.requireNonNull(Objects.requireNonNull(activity.tabLayout.getTabAt(layernumber)).getText()).toString(), (float)latitude, (float)longitude);
-                            call.enqueue(new Callback<PopulationModel>() {
-                                @Override
-                                public void onResponse(@NonNull Call<PopulationModel> call, @NonNull Response<PopulationModel> response) {
-                                    if(response.body() != null) {
-                                        Toast.makeText(activity, response.body().getAreatype(), Toast.LENGTH_SHORT).show();
-                                    }
-                                    else {
-                                        Toast.makeText(activity, "The Response body is empty", Toast.LENGTH_SHORT).show();
-                                    }
+                            String tabName = Objects.requireNonNull(Objects.requireNonNull(activity.tabLayout.getTabAt(activity.tabLayout.getSelectedTabPosition())).getText()).toString();
+                            switch (tabName) {
+                                case "Soil": {
+                                    Bundle bundle = new Bundle();
+                                    HashMap<String, String> soilbundle = new HashMap<>();
+                                    soilbundle.put("Tab Selected", "Soil");
+                                    soilbundle.put("Ward Number", "47");
+                                    soilbundle.put("Area Type", "Urban");
+                                    bundle.putSerializable("soilhash", soilbundle);
+                                    LayersFragment layersFragment = new LayersFragment();
+                                    layersFragment.setArguments(bundle);
+                                    break;
                                 }
-
-                                @Override
-                                public void onFailure(@NonNull Call<PopulationModel> call, Throwable t) {
-                                    Toast.makeText(activity, "The Response has failed", Toast.LENGTH_SHORT).show();
+                                case "Population": {
+                                    Bundle bundle = new Bundle();
+                                    HashMap<String, String> soilbundle = new HashMap<>();
+                                    soilbundle.put("Tab Selected", "Soil");
+                                    soilbundle.put("Ward Number", "47");
+                                    soilbundle.put("Area Type", "Urban");
+                                    bundle.putSerializable("soilhash", soilbundle);
+                                    LayersFragment layersFragment = new LayersFragment();
+                                    layersFragment.setArguments(bundle);
+                                    break;
                                 }
-                            });
+                                case "Geomorphology": {
+                                    Bundle bundle = new Bundle();
+                                    HashMap<String, String> soilbundle = new HashMap<>();
+                                    soilbundle.put("Tab Selected", "Soil");
+                                    soilbundle.put("Ward Number", "47");
+                                    soilbundle.put("Area Type", "Urban");
+                                    bundle.putSerializable("soilhash", soilbundle);
+                                    LayersFragment layersFragment = new LayersFragment();
+                                    layersFragment.setArguments(bundle);
+                                    break;
+                                }
+                                case "Drainage": {
+                                    Bundle bundle = new Bundle();
+                                    HashMap<String, String> soilbundle = new HashMap<>();
+                                    soilbundle.put("Tab Selected", "Soil");
+                                    soilbundle.put("Ward Number", "47");
+                                    soilbundle.put("Area Type", "Urban");
+                                    bundle.putSerializable("soilhash", soilbundle);
+                                    LayersFragment layersFragment = new LayersFragment();
+                                    layersFragment.setArguments(bundle);
+                                    break;
+                                }
+                                case "Lithology": {
+                                    Bundle bundle = new Bundle();
+                                    HashMap<String, String> soilbundle = new HashMap<>();
+                                    soilbundle.put("Tab Selected", "Soil");
+                                    soilbundle.put("Ward Number", "47");
+                                    soilbundle.put("Area Type", "Urban");
+                                    bundle.putSerializable("soilhash", soilbundle);
+                                    LayersFragment layersFragment = new LayersFragment();
+                                    layersFragment.setArguments(bundle);
+                                    break;
+                                }
+                                case "Slope": {
+                                    Bundle bundle = new Bundle();
+                                    HashMap<String, String> soilbundle = new HashMap<>();
+                                    soilbundle.put("Tab Selected", "Soil");
+                                    soilbundle.put("Ward Number", "47");
+                                    soilbundle.put("Area Type", "Urban");
+                                    bundle.putSerializable("soilhash", soilbundle);
+                                    LayersFragment layersFragment = new LayersFragment();
+                                    layersFragment.setArguments(bundle);
+                                    break;
+                                }
+                                case "Aspect": {
+                                    Bundle bundle = new Bundle();
+                                    HashMap<String, String> soilbundle = new HashMap<>();
+                                    soilbundle.put("Tab Selected", "Soil");
+                                    soilbundle.put("Ward Number", "47");
+                                    soilbundle.put("Area Type", "Urban");
+                                    bundle.putSerializable("soilhash", soilbundle);
+                                    LayersFragment layersFragment = new LayersFragment();
+                                    layersFragment.setArguments(bundle);
+                                    break;
+                                }
+                            }
                         }
-
                         @Override
                         public void onTabUnselected(TabLayout.Tab tab) {
-                        }
 
+                        }
                         @Override
                         public void onTabReselected(TabLayout.Tab tab) {
+
                         }
-                    });
+                    });*/
                 }
             }
         }
