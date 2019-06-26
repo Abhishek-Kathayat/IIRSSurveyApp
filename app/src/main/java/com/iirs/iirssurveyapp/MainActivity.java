@@ -2,17 +2,24 @@ package com.iirs.iirssurveyapp;
 
 import android.annotation.SuppressLint;
 import android.location.Location;
+import android.os.AsyncTask;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.CircularProgressDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.webkit.HttpAuthHandler;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -43,11 +50,18 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.maps.SupportMapFragment;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.lang.ref.WeakReference;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Timer;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -56,11 +70,13 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements PermissionsListener {
 
     public ViewPager viewPager;
-    public TabLayout tabLayout;
+    public static TabLayout tabLayout;
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
     private long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
+    private static String TAG = MainActivity.class.getSimpleName();
     private long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
+    private static String fetchurl = "http://127.0.0.1:8000/iirssurveyapp/";
 
 
     private MainActivityLocationCallback callback = new MainActivityLocationCallback(this);
@@ -240,11 +256,11 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         });
     }
 
-    private static class MainActivityLocationCallback
+    private class MainActivityLocationCallback
             implements LocationEngineCallback<LocationEngineResult> {
 
-        private double latitude = 0.0;
-        private double longitude = 0.0;
+        private float latitude = 0;
+        private float longitude = 0;
         private final WeakReference<MainActivity> activityWeakReference;
 
         MainActivityLocationCallback(MainActivity activity) {
@@ -265,104 +281,12 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
 
                 if (activity.mapboxMap != null && result.getLastLocation() != null) {
                     activity.mapboxMap.getLocationComponent().forceLocationUpdate(result.getLastLocation());
-                    if(result.getLastLocation().getLatitude() != latitude && result.getLastLocation().getLongitude() != longitude) {
-                        latitude = result.getLastLocation().getLatitude();
-                        longitude = result.getLastLocation().getLongitude();
-
-                    }/*
-                    activity.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-                        @Override
-                        public void onTabSelected(TabLayout.Tab tab) {
-                            String tabName = Objects.requireNonNull(Objects.requireNonNull(activity.tabLayout.getTabAt(activity.tabLayout.getSelectedTabPosition())).getText()).toString();
-                            switch (tabName) {
-                                case "Soil": {
-                                    Bundle bundle = new Bundle();
-                                    HashMap<String, String> soilbundle = new HashMap<>();
-                                    soilbundle.put("Tab Selected", "Soil");
-                                    soilbundle.put("Ward Number", "47");
-                                    soilbundle.put("Area Type", "Urban");
-                                    bundle.putSerializable("soilhash", soilbundle);
-                                    LayersFragment layersFragment = new LayersFragment();
-                                    layersFragment.setArguments(bundle);
-                                    break;
-                                }
-                                case "Population": {
-                                    Bundle bundle = new Bundle();
-                                    HashMap<String, String> soilbundle = new HashMap<>();
-                                    soilbundle.put("Tab Selected", "Soil");
-                                    soilbundle.put("Ward Number", "47");
-                                    soilbundle.put("Area Type", "Urban");
-                                    bundle.putSerializable("soilhash", soilbundle);
-                                    LayersFragment layersFragment = new LayersFragment();
-                                    layersFragment.setArguments(bundle);
-                                    break;
-                                }
-                                case "Geomorphology": {
-                                    Bundle bundle = new Bundle();
-                                    HashMap<String, String> soilbundle = new HashMap<>();
-                                    soilbundle.put("Tab Selected", "Soil");
-                                    soilbundle.put("Ward Number", "47");
-                                    soilbundle.put("Area Type", "Urban");
-                                    bundle.putSerializable("soilhash", soilbundle);
-                                    LayersFragment layersFragment = new LayersFragment();
-                                    layersFragment.setArguments(bundle);
-                                    break;
-                                }
-                                case "Drainage": {
-                                    Bundle bundle = new Bundle();
-                                    HashMap<String, String> soilbundle = new HashMap<>();
-                                    soilbundle.put("Tab Selected", "Soil");
-                                    soilbundle.put("Ward Number", "47");
-                                    soilbundle.put("Area Type", "Urban");
-                                    bundle.putSerializable("soilhash", soilbundle);
-                                    LayersFragment layersFragment = new LayersFragment();
-                                    layersFragment.setArguments(bundle);
-                                    break;
-                                }
-                                case "Lithology": {
-                                    Bundle bundle = new Bundle();
-                                    HashMap<String, String> soilbundle = new HashMap<>();
-                                    soilbundle.put("Tab Selected", "Soil");
-                                    soilbundle.put("Ward Number", "47");
-                                    soilbundle.put("Area Type", "Urban");
-                                    bundle.putSerializable("soilhash", soilbundle);
-                                    LayersFragment layersFragment = new LayersFragment();
-                                    layersFragment.setArguments(bundle);
-                                    break;
-                                }
-                                case "Slope": {
-                                    Bundle bundle = new Bundle();
-                                    HashMap<String, String> soilbundle = new HashMap<>();
-                                    soilbundle.put("Tab Selected", "Soil");
-                                    soilbundle.put("Ward Number", "47");
-                                    soilbundle.put("Area Type", "Urban");
-                                    bundle.putSerializable("soilhash", soilbundle);
-                                    LayersFragment layersFragment = new LayersFragment();
-                                    layersFragment.setArguments(bundle);
-                                    break;
-                                }
-                                case "Aspect": {
-                                    Bundle bundle = new Bundle();
-                                    HashMap<String, String> soilbundle = new HashMap<>();
-                                    soilbundle.put("Tab Selected", "Soil");
-                                    soilbundle.put("Ward Number", "47");
-                                    soilbundle.put("Area Type", "Urban");
-                                    bundle.putSerializable("soilhash", soilbundle);
-                                    LayersFragment layersFragment = new LayersFragment();
-                                    layersFragment.setArguments(bundle);
-                                    break;
-                                }
-                            }
-                        }
-                        @Override
-                        public void onTabUnselected(TabLayout.Tab tab) {
-
-                        }
-                        @Override
-                        public void onTabReselected(TabLayout.Tab tab) {
-
-                        }
-                    });*/
+                    if((float)result.getLastLocation().getLatitude() != latitude && (float)result.getLastLocation().getLongitude() != longitude) {
+                        latitude = (float)result.getLastLocation().getLatitude();
+                        longitude = (float)result.getLastLocation().getLongitude();
+                        fetchurl = fetchurl + "@latlong=" + latitude + "," + longitude;
+                        new GetGeoData().execute();
+                    }
                 }
             }
         }
@@ -375,6 +299,85 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                 Toast.makeText(activity, exception.getLocalizedMessage(),
                         Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    private class GetGeoData extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Void doInBackground(Void... arg0) {
+            HttpHandler httpHandler = new HttpHandler();
+            final String jsonStr = httpHandler.makeServiceCall(fetchurl);
+            fetchurl = "http://127.0.0.1:8000/iirssurveyapp/";
+            Log.e(TAG, "Response Recieved: " + jsonStr);
+            if (jsonStr != null) {
+                try {
+                    final JSONObject jsonObject = new JSONObject(jsonStr);
+                    tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                        @Override
+                        public void onTabSelected(TabLayout.Tab tab) {
+                            String tabName = Objects.requireNonNull(Objects.requireNonNull(tabLayout.getTabAt(tabLayout.getSelectedTabPosition())).getText()).toString();
+                            try {
+                                JSONObject data = jsonObject.getJSONObject(tabName);
+                                List<DataModel> datalist = new ArrayList<>();
+                                Iterator<String> iterator = data.keys();
+                                while(iterator.hasNext()) {
+                                    try {
+                                        String key = iterator.next();
+                                        DataModel dataModel = new DataModel(key, data.get(key).toString());
+                                        datalist.add(dataModel);
+                                    }
+                                    catch (Exception e) {
+                                        e.getMessage();
+                                    }
+                                }
+
+                                ArrayList<DataModel> arrayList = new ArrayList<>(datalist.size());
+                                arrayList.addAll(datalist);
+                                Bundle bundle = new Bundle();
+                                bundle.putParcelableArrayList("datalist", arrayList);
+                                LayersFragment fragment = new LayersFragment();
+                                fragment.setArguments(bundle);
+                                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
+
+                                /*for(int i = 0; i < datalist.size(); ++i) {
+                                    System.out.println(datalist.get(i).getContent_head() + "and" + datalist.get(i).getContent_desc());
+                                }*/
+                            }
+                            catch (final JSONException e) {
+                                Log.e(TAG, "Json parsing error :" + e.getMessage());
+                            }
+                        }
+
+                        @Override
+                        public void onTabUnselected(TabLayout.Tab tab) {
+
+                        }
+
+                        @Override
+                        public void onTabReselected(TabLayout.Tab tab) {
+
+                        }
+                    });
+                }
+                catch (final JSONException e) {
+                    Log.e(TAG, "Json parsing error :" + e.getMessage());
+                }
+            }
+            else {
+                Log.e(TAG, "Couldn't get json from server");
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
         }
     }
 }
