@@ -2,30 +2,21 @@ package com.iirs.iirssurveyapp;
 
 import android.annotation.SuppressLint;
 import android.location.Location;
-import android.os.AsyncTask;
-import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.support.v4.widget.CircularProgressDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.webkit.HttpAuthHandler;
 import android.widget.ImageButton;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.google.gson.JsonObject;
 import com.iirs.iirssurveyapp.Adapters.LayersPagerAdapter;
-import com.iirs.iirssurveyapp.Fragments.LayersFragment;
 import com.iirs.iirssurveyapp.Models.LayersModel;
 import com.iirs.iirssurveyapp.Models.DataModel;
 import com.iirs.iirssurveyapp.Rest.ApiClient;
@@ -50,19 +41,13 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.maps.SupportMapFragment;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Timer;
 
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -70,13 +55,16 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements PermissionsListener {
 
     public ViewPager viewPager;
-    public static TabLayout tabLayout;
+    public String layersdata;
+    private float latitude = 0;
+    private float longitude = 0;
+    public TabLayout tabLayout;
     private MapboxMap mapboxMap;
+    public List<LayersModel> layerslist = new ArrayList<>();
     private PermissionsManager permissionsManager;
     private long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
     private static String TAG = MainActivity.class.getSimpleName();
     private long DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5;
-    private static String fetchurl = "http://127.0.0.1:8000/iirssurveyapp/";
 
 
     private MainActivityLocationCallback callback = new MainActivityLocationCallback(this);
@@ -98,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         bottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                switch(newState) {
+                switch (newState) {
                     case BottomSheetBehavior.STATE_EXPANDED: {
                         closeopenbutton.setImageResource(R.drawable.ic_arrow_down);
                     }
@@ -117,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                         break;
                 }
             }
+
             @Override
             public void onSlide(@NonNull View view, float v) {
 
@@ -126,43 +115,33 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         closeopenbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+                if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
                     bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
                     closeopenbutton.setImageResource(R.drawable.ic_dash);
-                }
-                else if(bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_HALF_EXPANDED) {
+                } else if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_HALF_EXPANDED) {
                     bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
                     closeopenbutton.setImageResource(R.drawable.ic_arrow_up);
-                }
-                else if(bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+                } else if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
                     bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HALF_EXPANDED);
                     closeopenbutton.setImageResource(R.drawable.ic_dash);
                 }
             }
         });
 
-        viewPager = findViewById(R.id.layers_pager);
-        tabLayout = findViewById(R.id.layers_tab);
-        tabLayout.setupWithViewPager(viewPager);
-        getLayers();
-        //PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist);
-        //viewPager.setAdapter(pagerAdapter);
-
         SupportMapFragment mapFragment;
-        if(savedInstanceState == null) {
+        if (savedInstanceState == null) {
             final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             MapboxMapOptions options = new MapboxMapOptions();
             options.camera(new CameraPosition.Builder()
-                    .target(new LatLng(30.340979,78.043996))
+                    .target(new LatLng(30.340979, 78.043996))
                     .zoom(12)
                     .build());
 
             mapFragment = SupportMapFragment.newInstance(options);
             transaction.add(R.id.location_fragment_container, mapFragment, "com.mapbox.map");
             transaction.commit();
-        }
-        else {
-            mapFragment = (SupportMapFragment)getSupportFragmentManager().findFragmentByTag("com.mapbox.map");
+        } else {
+            mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentByTag("com.mapbox.map");
         }
 
         Objects.requireNonNull(mapFragment).getMapAsync(new OnMapReadyCallback() {
@@ -180,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         });
     }
 
-    @SuppressWarnings( {"MissingPermission"})
+    @SuppressWarnings({"MissingPermission"})
     private void enableLocationComponent(@NonNull Style loadedMapStyle) {
 
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
@@ -197,8 +176,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
             locationComponent.setRenderMode(RenderMode.COMPASS);
 
             initLocationEngine();
-        }
-        else {
+        } else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
@@ -238,29 +216,9 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         }
     }
 
-    private void getLayers() {
-        ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
-        Call<List<LayersModel>> call = apiInterface.getLayers();
-        call.enqueue(new Callback<List<LayersModel>>() {
-            @Override
-            public void onResponse(Call<List<LayersModel>> call, Response<List<LayersModel>> response) {
-                List<LayersModel> layerslist = response.body();
-                PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist);
-                viewPager.setAdapter(pagerAdapter);
-            }
-
-            @Override
-            public void onFailure(Call<List<LayersModel>> call, Throwable t) {
-                Log.d("Error", t.getMessage());
-            }
-        });
-    }
-
     private class MainActivityLocationCallback
             implements LocationEngineCallback<LocationEngineResult> {
 
-        private float latitude = 0;
-        private float longitude = 0;
         private final WeakReference<MainActivity> activityWeakReference;
 
         MainActivityLocationCallback(MainActivity activity) {
@@ -281,11 +239,49 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
 
                 if (activity.mapboxMap != null && result.getLastLocation() != null) {
                     activity.mapboxMap.getLocationComponent().forceLocationUpdate(result.getLastLocation());
-                    if((float)result.getLastLocation().getLatitude() != latitude && (float)result.getLastLocation().getLongitude() != longitude) {
-                        latitude = (float)result.getLastLocation().getLatitude();
-                        longitude = (float)result.getLastLocation().getLongitude();
-                        fetchurl = fetchurl + "@latlong=" + latitude + "," + longitude;
-                        new GetGeoData().execute();
+                    if ((float) result.getLastLocation().getLatitude() != latitude && (float) result.getLastLocation().getLongitude() != longitude) {
+                        latitude = (float) result.getLastLocation().getLatitude();
+                        longitude = (float) result.getLastLocation().getLongitude();
+
+                        ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
+                        Call<ResponseBody> call = apiInterface.getLocationData(latitude, longitude);
+                        call.enqueue(new Callback<ResponseBody>() {
+                            @Override
+                            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                                try {
+                                    layersdata = response.body().string();
+                                    Log.e(TAG, "Data is :" + layersdata);
+                                }
+                                catch (IOException e) {
+                                    Log.e(TAG, "IOException :" + e.getMessage());
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                                Log.d("Error", t.getMessage());
+                            }
+                        });
+
+                        viewPager = findViewById(R.id.layers_pager);
+                        tabLayout = findViewById(R.id.layers_tab);
+                        tabLayout.setupWithViewPager(viewPager);
+
+                        Call<List<LayersModel>> call_layer = apiInterface.getLayers();
+                        call_layer.enqueue(new Callback<List<LayersModel>>() {
+                            @Override
+                            public void onResponse(Call<List<LayersModel>> call, Response<List<LayersModel>> response) {
+                                layerslist = response.body();
+                                System.out.println(layersdata);
+                                PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist, layersdata);
+                                viewPager.setAdapter(pagerAdapter);
+                            }
+
+                            @Override
+                            public void onFailure(Call<List<LayersModel>> call, Throwable t) {
+                                Log.d("Error", t.getMessage());
+                            }
+                        });
                     }
                 }
             }
@@ -299,85 +295,6 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                 Toast.makeText(activity, exception.getLocalizedMessage(),
                         Toast.LENGTH_SHORT).show();
             }
-        }
-    }
-
-    private class GetGeoData extends AsyncTask<Void, Void, Void> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected Void doInBackground(Void... arg0) {
-            HttpHandler httpHandler = new HttpHandler();
-            final String jsonStr = httpHandler.makeServiceCall(fetchurl);
-            fetchurl = "http://127.0.0.1:8000/iirssurveyapp/";
-            Log.e(TAG, "Response Recieved: " + jsonStr);
-            if (jsonStr != null) {
-                try {
-                    final JSONObject jsonObject = new JSONObject(jsonStr);
-                    tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-                        @Override
-                        public void onTabSelected(TabLayout.Tab tab) {
-                            String tabName = Objects.requireNonNull(Objects.requireNonNull(tabLayout.getTabAt(tabLayout.getSelectedTabPosition())).getText()).toString();
-                            try {
-                                JSONObject data = jsonObject.getJSONObject(tabName);
-                                List<DataModel> datalist = new ArrayList<>();
-                                Iterator<String> iterator = data.keys();
-                                while(iterator.hasNext()) {
-                                    try {
-                                        String key = iterator.next();
-                                        DataModel dataModel = new DataModel(key, data.get(key).toString());
-                                        datalist.add(dataModel);
-                                    }
-                                    catch (Exception e) {
-                                        e.getMessage();
-                                    }
-                                }
-
-                                ArrayList<DataModel> arrayList = new ArrayList<>(datalist.size());
-                                arrayList.addAll(datalist);
-                                Bundle bundle = new Bundle();
-                                bundle.putParcelableArrayList("datalist", arrayList);
-                                LayersFragment fragment = new LayersFragment();
-                                fragment.setArguments(bundle);
-                                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
-
-                                /*for(int i = 0; i < datalist.size(); ++i) {
-                                    System.out.println(datalist.get(i).getContent_head() + "and" + datalist.get(i).getContent_desc());
-                                }*/
-                            }
-                            catch (final JSONException e) {
-                                Log.e(TAG, "Json parsing error :" + e.getMessage());
-                            }
-                        }
-
-                        @Override
-                        public void onTabUnselected(TabLayout.Tab tab) {
-
-                        }
-
-                        @Override
-                        public void onTabReselected(TabLayout.Tab tab) {
-
-                        }
-                    });
-                }
-                catch (final JSONException e) {
-                    Log.e(TAG, "Json parsing error :" + e.getMessage());
-                }
-            }
-            else {
-                Log.e(TAG, "Couldn't get json from server");
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            super.onPostExecute(result);
         }
     }
 }

@@ -12,15 +12,17 @@ import java.util.List;
 public class LayersPagerAdapter extends FragmentStatePagerAdapter {
 
     private List<LayersModel> layerslist;
+    private String datajson;
 
-    public LayersPagerAdapter(FragmentManager fm, List<LayersModel> layerslist) {
+    public LayersPagerAdapter(FragmentManager fm, List<LayersModel> layerslist, String datajson) {
         super(fm);
         this.layerslist = layerslist;
+        this.datajson = datajson;
     }
 
     @Override
     public Fragment getItem(int position) {
-        return new LayersFragment();
+        return LayersFragment.newInstance(layerslist.get(position).getLayerName(), datajson);
     }
 
     @Override
