@@ -2,6 +2,7 @@ package com.iirs.iirssurveyapp;
 
 import android.annotation.SuppressLint;
 import android.location.Location;
+import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.TabLayout;
@@ -13,6 +14,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -272,9 +274,10 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                             @Override
                             public void onResponse(Call<List<LayersModel>> call, Response<List<LayersModel>> response) {
                                 layerslist = response.body();
-                                System.out.println(layersdata);
                                 PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist, layersdata);
+                                //viewPager.setOffscreenPageLimit(0);
                                 viewPager.setAdapter(pagerAdapter);
+                                //viewPager.setCurrentItem(0);
                             }
 
                             @Override

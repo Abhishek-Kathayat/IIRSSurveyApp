@@ -22,6 +22,7 @@ public class LayersPagerAdapter extends FragmentStatePagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
+        System.out.println(layerslist.get(position).getLayerName() + position);
         return LayersFragment.newInstance(layerslist.get(position).getLayerName(), datajson);
     }
 
