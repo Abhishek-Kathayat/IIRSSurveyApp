@@ -1,1 +1,4 @@
 # IIRS Survey App
+
+An Android Application to help surveyors get a basic idea of the area they're surveying by getting basic information of the area, which includes soil characteristics, geomorphological and lithological characteristics, land usage, population in the area.<br/> This project is a part of my Summer Internship Programme at the Indian Institute of Remote Sensing (IIRS), Dehradun. The app makes use of ArcGIS shapefiles to get the data of the Area. The App currently only works for Dehradun, Uttarakhand area due to limitation of the provided data. The ArcGIS Shapefiles were provided by IIRS.<br/>
+The App only works as medium to get the location of the user and show the resultant data. Everything including the working on the data in form of shapefiles and what data to show to the user is controlled by the REST API which has been implementated in Django with database in Spatialite which is an extension of SQlite.
