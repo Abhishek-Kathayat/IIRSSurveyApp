@@ -2,7 +2,6 @@ package com.iirs.iirssurveyapp;
 
 import android.annotation.SuppressLint;
 import android.location.Location;
-import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.TabLayout;
@@ -14,13 +13,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.iirs.iirssurveyapp.Adapters.LayersPagerAdapter;
 import com.iirs.iirssurveyapp.Models.LayersModel;
-import com.iirs.iirssurveyapp.Models.DataModel;
 import com.iirs.iirssurveyapp.Rest.ApiClient;
 import com.iirs.iirssurveyapp.Rest.ApiInterface;
 import com.mapbox.android.core.location.LocationEngine;
@@ -58,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
 
     public ViewPager viewPager;
     public String layersdata;
+    public ApiInterface apiInterface;
     private float latitude = 0;
     private float longitude = 0;
     public TabLayout tabLayout;
@@ -239,13 +237,17 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                     return;
                 }
 
+                viewPager = findViewById(R.id.layers_pager);
+                tabLayout = findViewById(R.id.layers_tab);
+                tabLayout.setupWithViewPager(viewPager);
+
                 if (activity.mapboxMap != null && result.getLastLocation() != null) {
                     activity.mapboxMap.getLocationComponent().forceLocationUpdate(result.getLastLocation());
                     if ((float) result.getLastLocation().getLatitude() != latitude && (float) result.getLastLocation().getLongitude() != longitude) {
                         latitude = (float) result.getLastLocation().getLatitude();
                         longitude = (float) result.getLastLocation().getLongitude();
 
-                        ApiInterface apiInterface = ApiClient.getClient().create(ApiInterface.class);
+                        apiInterface = ApiClient.getClient().create(ApiInterface.class);
                         Call<ResponseBody> call = apiInterface.getLocationData(latitude, longitude);
                         call.enqueue(new Callback<ResponseBody>() {
                             @Override
@@ -253,6 +255,21 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                                 try {
                                     layersdata = response.body().string();
                                     Log.e(TAG, "Data is :" + layersdata);
+
+                                    Call<List<LayersModel>> call_layer = apiInterface.getLayers();
+                                    call_layer.enqueue(new Callback<List<LayersModel>>() {
+                                        @Override
+                                        public void onResponse(Call<List<LayersModel>> call, Response<List<LayersModel>> response) {
+                                            layerslist = response.body();
+                                            PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist, layersdata);
+                                            viewPager.setAdapter(pagerAdapter);
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<List<LayersModel>> call, Throwable t) {
+                                            Log.d("Error", t.getMessage());
+                                        }
+                                    });
                                 }
                                 catch (IOException e) {
                                     Log.e(TAG, "IOException :" + e.getMessage());
@@ -261,27 +278,6 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
 
                             @Override
                             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                                Log.d("Error", t.getMessage());
-                            }
-                        });
-
-                        viewPager = findViewById(R.id.layers_pager);
-                        tabLayout = findViewById(R.id.layers_tab);
-                        tabLayout.setupWithViewPager(viewPager);
-
-                        Call<List<LayersModel>> call_layer = apiInterface.getLayers();
-                        call_layer.enqueue(new Callback<List<LayersModel>>() {
-                            @Override
-                            public void onResponse(Call<List<LayersModel>> call, Response<List<LayersModel>> response) {
-                                layerslist = response.body();
-                                PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist, layersdata);
-                                //viewPager.setOffscreenPageLimit(0);
-                                viewPager.setAdapter(pagerAdapter);
-                                //viewPager.setCurrentItem(0);
-                            }
-
-                            @Override
-                            public void onFailure(Call<List<LayersModel>> call, Throwable t) {
                                 Log.d("Error", t.getMessage());
                             }
                         });

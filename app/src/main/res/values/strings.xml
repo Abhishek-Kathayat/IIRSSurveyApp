@@ -11,23 +11,6 @@
 
     <!-- Other Strings -->
     <string name="layersdetails">Layers Detail</string>
+    <string name="nullmessage">No Data Available for Current Location.</string>
 
-    <!-- Population Strings -->
-    <string name="wardno">Ward Number :</string>
-    <string name="areatype">Area Type :</string>
-    <string name="totalpeople">Total People :</string>
-    <string name="totalmale">Total Males :</string>
-    <string name="totalfemale">Total Females :</string>
-    <string name="totalliteratepeople">Total Literate People :</string>
-    <string name="totalliteratemales">Total Literate Males :</string>
-    <string name="totalliteratefemales">Total Literate Females :</string>
-    <string name="totalilliteratepeople">Total Illiterate People :</string>
-    <string name="totalilliteratemales">Total Illiterate Males :</string>
-    <string name="totalilliteratefemales">Total Illiterate Females :</string>
-    <string name="totalworkingpeople">Total Working People :</string>
-    <string name="totalworkingmales">Total Working Males :</string>
-    <string name="totalworkingfemales">Total Working Females :</string>
-    <string name="totalnonworkingpeople">Total Non-Working People :</string>
-    <string name="totalnonworkingmales">Total Non-Working Males :</string>
-    <string name="totalnonworkingfemales">Total Non-Working Females :</string>
 </resources>

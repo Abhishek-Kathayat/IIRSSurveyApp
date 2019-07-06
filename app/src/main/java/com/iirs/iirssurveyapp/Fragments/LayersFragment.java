@@ -3,7 +3,6 @@ package com.iirs.iirssurveyapp.Fragments;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -11,8 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
-import android.widget.ScrollView;
+import android.widget.TextView;
 
 import com.iirs.iirssurveyapp.Adapters.DataAdapter;
 import com.iirs.iirssurveyapp.MainActivity;
@@ -31,7 +29,7 @@ public class LayersFragment extends Fragment {
     public String datajson;
     public String tabName;
     RecyclerView recyclerView;
-    public ProgressBar progressBar;
+    public TextView textView_null;
     ArrayList<DataModel> datalist = new ArrayList<>();
     private static String TAG = MainActivity.class.getSimpleName();
 
@@ -48,8 +46,7 @@ public class LayersFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater layoutInflater, ViewGroup container, Bundle savedInstanceState) {
         View view = layoutInflater.inflate(R.layout.bottomsheet_contenthandler, container, false);
 
-        progressBar = view.findViewById(R.id.fetch_progress);
-        progressBar.setVisibility(View.VISIBLE);
+        textView_null = view.findViewById(R.id.error_textbox);
 
         recyclerView = view.findViewById(R.id.bottomsheet_contentholder);
         recyclerView.setNestedScrollingEnabled(true);
@@ -60,9 +57,7 @@ public class LayersFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         if (getArguments() != null) {
             datajson = getArguments().getString("datajson");
-            System.out.println(datajson);
             tabName = getArguments().getString("tabName");
-            System.out.println(tabName);
 
             recyclerView.setHasFixedSize(true);
             recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -78,17 +73,21 @@ public class LayersFragment extends Fragment {
                 final JSONObject jsonObject = new JSONObject(datajson);
                 try {
                     JSONObject data = jsonObject.getJSONObject(tabName);
-                    Iterator<String> iterator = data.keys();
-                    DataModel dataModel;
-                    while (iterator.hasNext()) {
-                        try {
-                            String key = iterator.next();
-                            dataModel = new DataModel(key, data.get(key).toString());
-                            datalist.add(dataModel);
-                        } catch (Exception e) {
-                            e.getMessage();
+                    if(!data.toString().equals("{}")) {
+                        Iterator<String> iterator = data.keys();
+                        DataModel dataModel;
+                        while (iterator.hasNext()) {
+                            try {
+                                String key = iterator.next();
+                                dataModel = new DataModel(key, data.get(key).toString());
+                                datalist.add(dataModel);
+                            } catch (Exception e) {
+                                e.getMessage();
+                            }
                         }
-                        progressBar.setVisibility(View.INVISIBLE);
+                    }
+                    else {
+                        textView_null.setVisibility(View.VISIBLE);
                     }
                 } catch (final JSONException e) {
                     Log.e(TAG, "Json parsing error :" + e.getMessage());
