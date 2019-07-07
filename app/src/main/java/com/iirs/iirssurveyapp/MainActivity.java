@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
     private float longitude = 0;
     public TabLayout tabLayout;
     private MapboxMap mapboxMap;
+    public ProgressBar progressBar;
     public List<LayersModel> layerslist = new ArrayList<>();
     private PermissionsManager permissionsManager;
     private long DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L;
@@ -80,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         RelativeLayout relativeLayout = findViewById(R.id.main_bottom_sheet);
         final BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(relativeLayout);
         bottomSheetBehavior.setFitToContents(false);
+        progressBar = findViewById(R.id.progress_bar);
         final ImageButton closeopenbutton = findViewById(R.id.closeopen_button);
         bottomSheetBehavior.setHideable(false);
 
@@ -263,6 +266,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                                             layerslist = response.body();
                                             PagerAdapter pagerAdapter = new LayersPagerAdapter(getSupportFragmentManager(), layerslist, layersdata);
                                             viewPager.setAdapter(pagerAdapter);
+                                            progressBar.setVisibility(View.INVISIBLE);
                                         }
 
                                         @Override
