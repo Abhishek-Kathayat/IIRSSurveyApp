@@ -256,7 +256,12 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
                             @Override
                             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                                 try {
-                                    layersdata = response.body().string();
+                                    try {
+                                        layersdata = response.body().string();
+                                    }
+                                    catch(NullPointerException e) {
+                                        Toast.makeText(getApplicationContext(), "Server did not return any data!", Toast.LENGTH_SHORT).show();
+                                    }
                                     Log.e(TAG, "Data is :" + layersdata);
 
                                     Call<List<LayersModel>> call_layer = apiInterface.getLayers();
